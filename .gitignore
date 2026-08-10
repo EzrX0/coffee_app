@@ -1,0 +1,16 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python / Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.venv/
+backend/venv/
+backend/env/
+
+# Note: The Flutter-specific files inside the my_app/ folder 
+# are automatically ignored by the my_app/.gitignore file!
