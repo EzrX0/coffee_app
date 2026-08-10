@@ -55,7 +55,7 @@ class AppProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("Error fetching coffees: $e");
+      debugPrint("Error fetching coffees: $e");
     }
   }
 
@@ -68,7 +68,7 @@ class AppProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("Error fetching favorites: $e");
+      debugPrint("Error fetching favorites: $e");
     }
   }
 
@@ -81,7 +81,7 @@ class AppProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("Error fetching cart: $e");
+      debugPrint("Error fetching cart: $e");
     }
   }
 
@@ -126,7 +126,7 @@ class AppProvider with ChangeNotifier {
         fetchCart(); // Refresh cart to get full item with ID
       }
     } catch (e) {
-      print("Error adding to cart: $e");
+      debugPrint("Error adding to cart: $e");
     }
   }
 
@@ -136,7 +136,7 @@ class AppProvider with ChangeNotifier {
     try {
       await http.delete(Uri.parse('$baseUrl/cart/$cartItemId'));
     } catch (e) {
-      print("Error removing from cart: $e");
+      debugPrint("Error removing from cart: $e");
     }
   }
 }
