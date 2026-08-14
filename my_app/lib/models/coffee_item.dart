@@ -28,6 +28,7 @@ class CoffeeItem {
 }
 
 final List<String> categories = [
+  'All',
   'Cappuccino',
   'Machiato',
   'Latte',

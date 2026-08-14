@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/coffee_item.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
+import '../main.dart';
 import 'detail_page.dart';
 import 'favorite_page.dart';
 import 'order_page.dart';
-import 'notification_page.dart';
+import 'order_history_page.dart';
+import 'profile_page.dart';
 
 class CoffeeHomePage extends StatefulWidget {
   const CoffeeHomePage({super.key});
@@ -48,7 +51,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
               ),
               const FavoritePage(),
               const OrderPage(),
-              const NotificationPage(),
+              const OrderHistoryPage(),
             ],
           );
         },
@@ -58,13 +61,16 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
   }
 
   Widget _buildHeader(AppProvider appProvider) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final username = auth.username ?? 'User';
+
     return Container(
       color: const Color(0xFF1C1C1E),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
         left: 20,
         right: 20,
-        bottom: 0,
+        bottom: 20,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,60 +78,86 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Location',
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  SizedBox(height: 2),
                   Row(
                     children: [
                       Text(
-                        'West, Balurghat',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        'Good ${_getGreeting()} ',
+                        style: const TextStyle(color: Colors.white54, fontSize: 13),
                       ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      const Icon(Icons.coffee, color: Colors.white54, size: 14),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    username,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
-              const CircleAvatar(
-                radius: 22,
-                backgroundImage: NetworkImage(
-                  'https://randomuser.me/api/portraits/men/32.jpg',
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  );
+                },
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFD4860B), Color(0xFFE8A84C)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD4860B).withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      username[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Container(
-            margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF3A3A3C),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.search, color: Colors.grey),
+                Icon(Icons.search, color: Colors.grey.shade400),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     onChanged: (value) => appProvider.setSearchQuery(value),
-                    decoration: const InputDecoration(
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
                       hintText: 'Search coffee',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
                       border: InputBorder.none,
                     ),
                   ),
@@ -146,17 +178,23 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
     );
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
+  }
+
   Widget _buildCategories(AppProvider appProvider) {
     return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
         itemBuilder: (context, index) {
-          final isSelected = appProvider.selectedCategory == categories[index] || 
-                             (appProvider.selectedCategory == 'All' && index == 0); // Assuming 'Cappuccino' is index 0 and means 'All' if we didn't add 'All'
-          // Actually let's just make sure 'All' is handled. If categories doesn't have 'All', let's just use the string.
+          final isSelected = appProvider.selectedCategory == categories[index];
           return GestureDetector(
             onTap: () => appProvider.setSelectedCategory(categories[index]),
             child: Container(
@@ -166,6 +204,9 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                 color:
                     isSelected ? const Color(0xFFD4860B) : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
+                border: isSelected
+                    ? null
+                    : Border.all(color: Colors.grey.shade300, width: 1),
               ),
               child: Text(
                 categories[index],
@@ -336,7 +377,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
       Icons.home,
       Icons.favorite_border,
       Icons.shopping_bag_outlined,
-      Icons.notifications_none,
+      Icons.receipt_long,
     ];
 
     return Container(

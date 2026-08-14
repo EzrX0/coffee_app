@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/coffee_item.dart';
 import '../models/cart_item.dart';
+import '../models/order.dart';
 
 class AppProvider with ChangeNotifier {
   final String baseUrl = 'http://10.0.2.2:8000/api'; // Use 127.0.0.1 if on Windows/Web
@@ -10,14 +12,38 @@ class AppProvider with ChangeNotifier {
   List<CoffeeItem> _coffees = [];
   List<int> _favoriteIds = [];
   List<CartItem> _cartItems = [];
+  List<Order> _orders = [];
   
   bool _isLoading = false;
   String _searchQuery = '';
   String _selectedCategory = 'All';
+  String? _token;
+
+  void updateToken(String? token) {
+    final previousToken = _token;
+    _token = token;
+    if (_token != null && previousToken != _token) {
+      fetchAllData();
+    } else if (_token == null) {
+      _coffees = [];
+      _favoriteIds = [];
+      _cartItems = [];
+      _orders = [];
+      notifyListeners();
+    }
+  }
+
+  Map<String, String> get _headers {
+    return {
+      'Content-Type': 'application/json',
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    };
+  }
 
   List<CoffeeItem> get coffees => _coffees;
   List<int> get favoriteIds => _favoriteIds;
   List<CartItem> get cartItems => _cartItems;
+  List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
@@ -32,6 +58,7 @@ class AppProvider with ChangeNotifier {
       fetchCoffees(),
       fetchFavorites(),
       fetchCart(),
+      fetchOrders(),
     ]);
 
     _isLoading = false;
@@ -61,7 +88,7 @@ class AppProvider with ChangeNotifier {
 
   Future<void> fetchFavorites() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/favorites'));
+      final response = await http.get(Uri.parse('$baseUrl/favorites'), headers: _headers);
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _favoriteIds = data.map<int>((f) => f['coffee_id'] as int).toList();
@@ -74,7 +101,7 @@ class AppProvider with ChangeNotifier {
 
   Future<void> fetchCart() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/cart'));
+      final response = await http.get(Uri.parse('$baseUrl/cart'), headers: _headers);
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _cartItems = data.map((json) => CartItem.fromJson(json)).toList();
@@ -82,6 +109,19 @@ class AppProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error fetching cart: $e");
+    }
+  }
+
+  Future<void> fetchOrders() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/orders'), headers: _headers);
+      if (response.statusCode == 200) {
+        List data = json.decode(response.body);
+        _orders = data.map((json) => Order.fromJson(json)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching orders: $e");
     }
   }
 
@@ -99,13 +139,13 @@ class AppProvider with ChangeNotifier {
     if (_favoriteIds.contains(coffeeId)) {
       _favoriteIds.remove(coffeeId);
       notifyListeners();
-      await http.delete(Uri.parse('$baseUrl/favorites/$coffeeId'));
+      await http.delete(Uri.parse('$baseUrl/favorites/$coffeeId'), headers: _headers);
     } else {
       _favoriteIds.add(coffeeId);
       notifyListeners();
       await http.post(
         Uri.parse('$baseUrl/favorites'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({'coffee_id': coffeeId}),
       );
     }
@@ -115,7 +155,7 @@ class AppProvider with ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/cart'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'coffee_id': coffeeId,
           'size': size,
@@ -134,9 +174,61 @@ class AppProvider with ChangeNotifier {
     _cartItems.removeWhere((item) => item.id == cartItemId);
     notifyListeners();
     try {
-      await http.delete(Uri.parse('$baseUrl/cart/$cartItemId'));
+      await http.delete(Uri.parse('$baseUrl/cart/$cartItemId'), headers: _headers);
     } catch (e) {
       debugPrint("Error removing from cart: $e");
+    }
+  }
+
+  Future<bool> checkout() async {
+    if (_cartItems.isEmpty) return false;
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/create-payment-intent'),
+        headers: _headers,
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint("Failed to create payment intent: ${response.body}");
+        return false;
+      }
+
+      final data = json.decode(response.body);
+      final String? clientSecret = data['client_secret'];
+      if (clientSecret == null) return false;
+
+      final String paymentIntentId = clientSecret.split('_secret_')[0];
+
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Coffee Shop',
+          style: ThemeMode.light,
+        ),
+      );
+
+      await Stripe.instance.presentPaymentSheet();
+
+      final checkoutResponse = await http.post(
+        Uri.parse('$baseUrl/checkout'),
+        headers: _headers,
+        body: json.encode({'payment_intent_id': paymentIntentId}),
+      );
+
+      if (checkoutResponse.statusCode == 200) {
+        _cartItems = [];
+        notifyListeners();
+        fetchOrders(); // refresh order history
+        return true;
+      }
+      return false;
+    } on StripeException catch (e) {
+      debugPrint("Stripe error: ${e.error.localizedMessage}");
+      rethrow;
+    } catch (e) {
+      debugPrint("Error checking out: $e");
+      return false;
     }
   }
 }

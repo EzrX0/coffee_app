@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+import 'auth_page.dart';
 
 class CoffeeOnboardingPage extends StatelessWidget {
   const CoffeeOnboardingPage({super.key});
@@ -80,7 +80,7 @@ class CoffeeOnboardingPage extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const CoffeeHomePage(),
+                            builder: (_) => const AuthPage(),
                           ),
                         );
                       },

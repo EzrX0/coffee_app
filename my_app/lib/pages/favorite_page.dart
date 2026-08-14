@@ -21,10 +21,22 @@ class FavoritePage extends StatelessWidget {
           final favorites = appProvider.favoriteCoffees;
 
           if (favorites.isEmpty) {
-            return const Center(
-              child: Text(
-                'No favorites yet.',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No favorites yet',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Like a coffee to save it here!',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
