@@ -260,6 +260,20 @@ def add_to_cart(cart_item: schemas.CartItemBase, current_user: models.User = Dep
     db.refresh(db_item)
     return db_item
 
+@app.put("/api/cart/{cart_item_id}", response_model=schemas.CartItem)
+def update_cart_item(cart_item_id: int, item_update: schemas.CartItemUpdate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db_item = db.query(models.CartItem).filter(
+        models.CartItem.id == cart_item_id,
+        models.CartItem.user_id == current_user.id
+    ).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Cart item not found")
+    
+    db_item.quantity = item_update.quantity
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
 @app.delete("/api/cart/{cart_item_id}")
 def remove_from_cart(cart_item_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     db_item = db.query(models.CartItem).filter(

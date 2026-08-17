@@ -9,7 +9,7 @@ import 'providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Stripe.publishableKey = 'pk_test_51Tp13uRKk1FSnRdUZmnhVe5yi2WguKYS2pPG1wGkpO3CVnCKTiIBW56HBe2EgvmF7iE3LM0aRRxdpzlC3U8CvcjY00Ai4x5CRo';
+  Stripe.publishableKey = 'pk_test_51Tp13uRKk1FSnRdUYec0XbZ4gBjwfFfxHssixkIEPgxyw2et6sc7C38AqRuyOUj23YNi9BZtCjtqi7AZpiH60ybB00jKVybBBO';
   await Stripe.instance.applySettings();
 
   runApp(

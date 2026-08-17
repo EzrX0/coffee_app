@@ -180,6 +180,27 @@ class AppProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateCartItem(int cartItemId, int newQuantity) async {
+    if (newQuantity <= 0) {
+      await removeFromCart(cartItemId);
+      return;
+    }
+    final index = _cartItems.indexWhere((item) => item.id == cartItemId);
+    if (index >= 0) {
+      _cartItems[index].quantity = newQuantity;
+      notifyListeners();
+      try {
+        await http.put(
+          Uri.parse('$baseUrl/cart/$cartItemId'),
+          headers: _headers,
+          body: json.encode({'quantity': newQuantity}),
+        );
+      } catch (e) {
+        debugPrint("Error updating cart: $e");
+      }
+    }
+  }
+
   Future<bool> checkout() async {
     if (_cartItems.isEmpty) return false;
     

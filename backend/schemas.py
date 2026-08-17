@@ -59,6 +59,9 @@ class CartItemBase(BaseModel):
 class CartItemCreate(CartItemBase):
     pass
 
+class CartItemUpdate(BaseModel):
+    quantity: int
+
 class CartItem(CartItemBase):
     id: int
     coffee: Coffee
