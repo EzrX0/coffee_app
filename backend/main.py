@@ -1,7 +1,9 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -10,7 +12,7 @@ import models
 import schemas
 import stripe
 from auth import get_current_user, get_password_hash, create_access_token
-from database import SessionLocal, engine
+from database import SessionLocal, engine, get_db
 
 
 
@@ -20,15 +22,162 @@ stripe.api_key = os.getenv("STRIPE_API_KEY")
 # models.Base.metadata.drop_all(bind=engine)
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Coffee App API")
 
-# Dependency to get DB session
-def get_db():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: seed the database
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    if db.query(models.Coffee).count() == 0:
+        dummy_data = [
+            # Cappuccino
+            models.Coffee(
+                name='Cappuccino',
+                subtitle='with Chocolate',
+                price=4.53,
+                rating=4.8,
+                imageUrl='https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400',
+                description='A rich cappuccino topped with velvety chocolate shavings and a dusting of cocoa powder. The perfect balance of espresso intensity and sweet indulgence.',
+            ),
+            models.Coffee(
+                name='Cappuccino',
+                subtitle='with Oat Milk',
+                price=3.90,
+                rating=4.9,
+                imageUrl='https://images.unsplash.com/photo-1534778101976-62847782c213?w=400',
+                description='A creamy, plant-based cappuccino made with barista-grade oat milk. Naturally sweet with a silky-smooth texture that froths beautifully.',
+            ),
+            models.Coffee(
+                name='Cappuccino',
+                subtitle='with Vanilla',
+                price=4.55,
+                rating=4.5,
+                imageUrl='https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400',
+                description='Classic cappuccino infused with Madagascar vanilla bean extract. A fragrant, comforting twist on the Italian original.',
+            ),
+            models.Coffee(
+                name='Cappuccino',
+                subtitle='with Caramel',
+                price=5.20,
+                rating=4.0,
+                imageUrl='https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400',
+                description='A luscious cappuccino drizzled with house-made salted caramel. Bold espresso meets buttery sweetness in every sip.',
+            ),
+            # Machiato
+            models.Coffee(
+                name='Machiato',
+                subtitle='Espresso Machiato',
+                price=3.50,
+                rating=4.7,
+                imageUrl='https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=400',
+                description='A traditional espresso "stained" with just a dollop of steamed milk foam. Intense, bold, and perfect for purists.',
+            ),
+            models.Coffee(
+                name='Machiato',
+                subtitle='Caramel Machiato',
+                price=4.80,
+                rating=4.6,
+                imageUrl='https://images.unsplash.com/photo-1558857563-b371033873b8?w=400',
+                description='Layers of vanilla-infused steamed milk, rich espresso, and a crosshatch of caramel sauce. A sweet and sophisticated classic.',
+            ),
+            models.Coffee(
+                name='Machiato',
+                subtitle='Latte Machiato',
+                price=4.20,
+                rating=4.4,
+                imageUrl='https://images.unsplash.com/photo-1611564494260-6f21b80af7ea?w=400',
+                description='Steamed milk "stained" with a shot of espresso, creating beautiful layers. Milder and creamier than a traditional machiato.',
+            ),
+            models.Coffee(
+                name='Machiato',
+                subtitle='Hazelnut Machiato',
+                price=4.90,
+                rating=4.3,
+                imageUrl='https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400',
+                description='A nutty twist on the classic machiato with roasted hazelnut syrup. Warm, toasty flavors complement the espresso perfectly.',
+            ),
+            # Latte
+            models.Coffee(
+                name='Latte',
+                subtitle='Classic Latte',
+                price=4.00,
+                rating=4.8,
+                imageUrl='https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=400',
+                description='The timeless café latte — a perfect ratio of espresso and steamed milk topped with a thin layer of microfoam. Smooth, mellow, and endlessly satisfying.',
+            ),
+            models.Coffee(
+                name='Latte',
+                subtitle='Vanilla Latte',
+                price=4.50,
+                rating=4.7,
+                imageUrl='https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400',
+                description='Our classic latte enhanced with premium vanilla syrup. A crowd favorite that balances coffee character with gentle sweetness.',
+            ),
+            models.Coffee(
+                name='Latte',
+                subtitle='Caramel Latte',
+                price=4.70,
+                rating=4.5,
+                imageUrl='https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=400',
+                description='A velvety latte swirled with rich caramel sauce and topped with whipped cream. Dessert in a cup.',
+            ),
+            models.Coffee(
+                name='Latte',
+                subtitle='Matcha Latte',
+                price=5.00,
+                rating=4.9,
+                imageUrl='https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400',
+                description='Ceremonial-grade Japanese matcha whisked with steamed milk. Earthy, vibrant, and packed with natural antioxidants.',
+            ),
+            # Americano
+            models.Coffee(
+                name='Americano',
+                subtitle='Classic Americano',
+                price=3.00,
+                rating=4.6,
+                imageUrl='https://images.unsplash.com/photo-1551030173-122aabc4489c?w=400',
+                description='Double espresso diluted with hot water to create a clean, bold coffee. All the flavor of espresso with a lighter body.',
+            ),
+            models.Coffee(
+                name='Americano',
+                subtitle='Iced Americano',
+                price=3.50,
+                rating=4.8,
+                imageUrl='https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400',
+                description='Chilled double espresso poured over ice and cold water. Crisp, refreshing, and perfect for warm days.',
+            ),
+            models.Coffee(
+                name='Americano',
+                subtitle='White Americano',
+                price=3.80,
+                rating=4.3,
+                imageUrl='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400',
+                description='An Americano finished with a splash of steamed milk. A smoother, softer take on the black coffee classic.',
+            ),
+            models.Coffee(
+                name='Americano',
+                subtitle='Double Shot',
+                price=4.00,
+                rating=4.5,
+                imageUrl='https://images.unsplash.com/photo-1497515114889-60a4f2dc0e75?w=400',
+                description='An extra-strength Americano made with a triple shot of espresso. Maximum caffeine, maximum flavor, zero compromise.',
+            ),
+        ]
+        db.add_all(dummy_data)
+        db.commit()
+    db.close()
+    yield
+    # Shutdown: nothing needed
+
+
+app = FastAPI(title="Coffee App API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/api/signup", response_model=schemas.User)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -55,132 +204,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         )
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
-
-@app.on_event("startup")
-def startup_event():
-    db = SessionLocal()
-    if db.query(models.Coffee).count() == 0:
-        dummy_data = [
-            # Cappuccino
-            models.Coffee(
-                name='Cappuccino',
-                subtitle='with Chocolate',
-                price=4.53,
-                rating=4.8,
-                imageUrl='https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400',
-            ),
-            models.Coffee(
-                name='Cappuccino',
-                subtitle='with Oat Milk',
-                price=3.90,
-                rating=4.9,
-                imageUrl='https://images.unsplash.com/photo-1534778101976-62847782c213?w=400',
-            ),
-            models.Coffee(
-                name='Cappuccino',
-                subtitle='with Vanilla',
-                price=4.55,
-                rating=4.5,
-                imageUrl='https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400',
-            ),
-            models.Coffee(
-                name='Cappuccino',
-                subtitle='with Caramel',
-                price=5.20,
-                rating=4.0,
-                imageUrl='https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400',
-            ),
-            # Machiato
-            models.Coffee(
-                name='Machiato',
-                subtitle='Espresso Machiato',
-                price=3.50,
-                rating=4.7,
-                imageUrl='https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=400',
-            ),
-            models.Coffee(
-                name='Machiato',
-                subtitle='Caramel Machiato',
-                price=4.80,
-                rating=4.6,
-                imageUrl='https://images.unsplash.com/photo-1558857563-b371033873b8?w=400',
-            ),
-            models.Coffee(
-                name='Machiato',
-                subtitle='Latte Machiato',
-                price=4.20,
-                rating=4.4,
-                imageUrl='https://images.unsplash.com/photo-1611564494260-6f21b80af7ea?w=400',
-            ),
-            models.Coffee(
-                name='Machiato',
-                subtitle='Hazelnut Machiato',
-                price=4.90,
-                rating=4.3,
-                imageUrl='https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400',
-            ),
-            # Latte
-            models.Coffee(
-                name='Latte',
-                subtitle='Classic Latte',
-                price=4.00,
-                rating=4.8,
-                imageUrl='https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?w=400',
-            ),
-            models.Coffee(
-                name='Latte',
-                subtitle='Vanilla Latte',
-                price=4.50,
-                rating=4.7,
-                imageUrl='https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400',
-            ),
-            models.Coffee(
-                name='Latte',
-                subtitle='Caramel Latte',
-                price=4.70,
-                rating=4.5,
-                imageUrl='https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=400',
-            ),
-            models.Coffee(
-                name='Latte',
-                subtitle='Matcha Latte',
-                price=5.00,
-                rating=4.9,
-                imageUrl='https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400',
-            ),
-            # Americano
-            models.Coffee(
-                name='Americano',
-                subtitle='Classic Americano',
-                price=3.00,
-                rating=4.6,
-                imageUrl='https://images.unsplash.com/photo-1551030173-122aabc4489c?w=400',
-            ),
-            models.Coffee(
-                name='Americano',
-                subtitle='Iced Americano',
-                price=3.50,
-                rating=4.8,
-                imageUrl='https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400',
-            ),
-            models.Coffee(
-                name='Americano',
-                subtitle='White Americano',
-                price=3.80,
-                rating=4.3,
-                imageUrl='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400',
-            ),
-            models.Coffee(
-                name='Americano',
-                subtitle='Double Shot',
-                price=4.00,
-                rating=4.5,
-                imageUrl='https://images.unsplash.com/photo-1497515114889-60a4f2dc0e75?w=400',
-            ),
-        ]
-        db.add_all(dummy_data)
-        db.commit()
-    db.close()
 
 @app.get("/api/coffees", response_model=list[schemas.Coffee])
 def read_coffees(
@@ -291,7 +314,10 @@ def create_payment_intent(current_user: models.User = Depends(get_current_user),
     if not cart_items:
         raise HTTPException(status_code=400, detail="Cart is empty")
     
-    total_price = sum(item.coffee.price * item.quantity for item in cart_items)
+    total_price = sum(
+        (item.coffee.price + (0.50 if item.size == 'M' else 1.00 if item.size == 'L' else 0.0)) * item.quantity 
+        for item in cart_items
+    )
     # Stripe expects amount in cents
     amount_cents = int(round(total_price * 100))
     
@@ -311,7 +337,10 @@ def checkout(payload: Optional[schemas.CheckoutRequest] = None, current_user: mo
     if not cart_items:
         raise HTTPException(status_code=400, detail="Cart is empty")
     
-    total_price = sum(item.coffee.price * item.quantity for item in cart_items)
+    total_price = sum(
+        (item.coffee.price + (0.50 if item.size == 'M' else 1.00 if item.size == 'L' else 0.0)) * item.quantity 
+        for item in cart_items
+    )
     payment_intent_id = payload.payment_intent_id if payload else None
     
     db_order = models.Order(user_id=current_user.id, total_price=total_price, payment_intent_id=payment_intent_id)
@@ -325,7 +354,7 @@ def checkout(payload: Optional[schemas.CheckoutRequest] = None, current_user: mo
             coffee_id=item.coffee_id,
             size=item.size,
             quantity=item.quantity,
-            price=item.coffee.price
+            price=item.coffee.price + (0.50 if item.size == 'M' else 1.00 if item.size == 'L' else 0.0)
         )
         db.add(db_order_item)
         db.delete(item) # remove from cart
@@ -351,3 +380,32 @@ def update_password(payload: schemas.PasswordUpdate, current_user: models.User =
     current_user.hashed_password = get_password_hash(payload.new_password)
     db.commit()
     return {"status": "success"}
+
+@app.get("/api/notifications", response_model=list[schemas.Notification])
+def get_notifications(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Create some dummy notifications if the user has none (for demonstration purposes)
+    count = db.query(models.Notification).filter(models.Notification.user_id == current_user.id).count()
+    if count == 0:
+        dummy_notifications = [
+            models.Notification(user_id=current_user.id, title='Welcome!', description='Thanks for joining the Coffee App.', type='status'),
+            models.Notification(user_id=current_user.id, title='Special Promo', description='Get 20% off all Lattes today! Use code LATTE20 at checkout.', type='offer'),
+        ]
+        db.add_all(dummy_notifications)
+        db.commit()
+
+    return db.query(models.Notification).filter(models.Notification.user_id == current_user.id).order_by(models.Notification.created_at.desc()).all()
+
+@app.put("/api/notifications/{notification_id}/read", response_model=schemas.Notification)
+def mark_notification_read(notification_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    notification = db.query(models.Notification).filter(
+        models.Notification.id == notification_id,
+        models.Notification.user_id == current_user.id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+        
+    notification.is_read = 1
+    db.commit()
+    db.refresh(notification)
+    return notification

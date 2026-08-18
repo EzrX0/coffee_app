@@ -126,7 +126,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD4860B).withOpacity(0.35),
+                          color: const Color(0xFFD4860B).withValues(alpha: 0.35),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -187,7 +187,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                       onPressed: auth.isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD4860B),
-                        disabledBackgroundColor: const Color(0xFFD4860B).withOpacity(0.5),
+                        disabledBackgroundColor: const Color(0xFFD4860B).withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

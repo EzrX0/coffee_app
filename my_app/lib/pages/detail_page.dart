@@ -40,6 +40,12 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                     child: Image.network(
                       widget.item.imageUrl,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: const Color(0xFFF0F0F0),
+                        child: const Center(
+                          child: Icon(Icons.coffee, size: 60, color: Colors.brown),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -52,7 +58,7 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.chevron_left, size: 24),
@@ -75,7 +81,7 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -134,7 +140,7 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${widget.item.rating} (2,330)',
+                            '${widget.item.rating}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -156,26 +162,14 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                        height: 1.6,
-                      ),
-                      children: [
-                        TextSpan(
-                          text:
-                              'A cappuccino is an approximately 150 ml (5 oz) beverage, with 25 ml of espresso coffee and 85ml of fresh milk the fo.. ',
-                        ),
-                        TextSpan(
-                          text: 'Read More',
-                          style: TextStyle(
-                            color: Color(0xFFD4860B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    widget.item.description.isNotEmpty
+                        ? widget.item.description
+                        : 'A delicious coffee beverage crafted with care using premium ingredients.',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                      height: 1.6,
                     ),
                   ),
 
@@ -246,7 +240,7 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '\$ ${widget.item.price.toStringAsFixed(2)}',
+                            '\$ ${(widget.item.price + (_selectedSize == 'M' ? 0.50 : _selectedSize == 'L' ? 1.00 : 0.0)).toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Color(0xFFD4860B),
                               fontSize: 22,

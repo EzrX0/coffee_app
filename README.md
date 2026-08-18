@@ -8,7 +8,9 @@ This project consists of a sleek frontend mobile app built with Flutter and a ro
 - **Dynamic Coffee Catalog:** Browse coffees pulled directly from a live PostgreSQL database.
 - **Search & Filter:** Search for specific coffees by name or filter by category (e.g., Cappuccino, Latte, Machiato).
 - **Favorites System:** Save your favorite drinks and view them on a dedicated Favorites page.
-- **Cart & Ordering:** Add coffees to your cart, select sizes, adjust quantities, and see a dynamically calculated total price on the Order page.
+- **Cart & Ordering:** Add coffees to your cart, select sizes, adjust quantities (+/- controls), and see a dynamically calculated total price based on size modifiers.
+- **Dynamic Notifications:** Receive real-time updates for offers, rewards, and order statuses, synchronized with the backend database.
+- **Pull-to-Refresh:** Manually pull down to instantly refresh data across the home page, favorites, cart, order history, and notifications.
 - **Global State Management:** Uses Flutter's `provider` package to ensure the UI updates instantly across all pages when you add an item to your cart or favorites.
 
 ## Tech Stack 🛠️

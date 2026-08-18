@@ -9,7 +9,12 @@ import 'providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Stripe.publishableKey = 'pk_test_51Tp13uRKk1FSnRdUYec0XbZ4gBjwfFfxHssixkIEPgxyw2et6sc7C38AqRuyOUj23YNi9BZtCjtqi7AZpiH60ybB00jKVybBBO';
+  // Override at build time: --dart-define=STRIPE_PUBLISHABLE_KEY=pk_live_...
+  const stripeKey = String.fromEnvironment(
+    'STRIPE_PUBLISHABLE_KEY',
+    defaultValue: 'pk_test_51Tp13uRKk1FSnRdUYec0XbZ4gBjwfFfxHssixkIEPgxyw2et6sc7C38AqRuyOUj23YNi9BZtCjtqi7AZpiH60ybB00jKVybBBO',
+  );
+  Stripe.publishableKey = stripeKey;
   await Stripe.instance.applySettings();
 
   runApp(

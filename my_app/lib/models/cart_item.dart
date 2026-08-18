@@ -4,7 +4,7 @@ class CartItem {
   final int id;
   final int coffeeId;
   final String size;
-  final int quantity;
+  int quantity;
   final CoffeeItem coffee;
 
   CartItem({
@@ -24,4 +24,13 @@ class CartItem {
       coffee: CoffeeItem.fromJson(json['coffee']),
     );
   }
+
+  double get unitPrice {
+    double basePrice = coffee.price;
+    if (size == 'M') return basePrice + 0.50;
+    if (size == 'L') return basePrice + 1.00;
+    return basePrice;
+  }
+
+  double get totalPrice => unitPrice * quantity;
 }

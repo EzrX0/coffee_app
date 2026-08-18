@@ -33,9 +33,11 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                 children: [
                   _buildHeader(appProvider),
                   Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
+                    child: RefreshIndicator(
+                      onRefresh: () => appProvider.fetchAllData(),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 24),
@@ -46,6 +48,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                         ],
                       ),
                     ),
+                  ),
                   ),
                 ],
               ),
@@ -120,7 +123,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFD4860B).withOpacity(0.4),
+                        color: const Color(0xFFD4860B).withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -265,7 +268,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -285,6 +288,14 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                     height: 130,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 130,
+                      width: double.infinity,
+                      color: const Color(0xFFF0F0F0),
+                      child: const Center(
+                        child: Icon(Icons.coffee, size: 40, color: Colors.brown),
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -386,7 +397,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 10,
           ),
         ],

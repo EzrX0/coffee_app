@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../models/coffee_item.dart';
 import '../models/cart_item.dart';
 import '../models/order.dart';
+import '../models/notification.dart';
 
 class AppProvider with ChangeNotifier {
   final String baseUrl = 'http://10.0.2.2:8000/api'; // Use 127.0.0.1 if on Windows/Web
@@ -13,6 +14,7 @@ class AppProvider with ChangeNotifier {
   List<int> _favoriteIds = [];
   List<CartItem> _cartItems = [];
   List<Order> _orders = [];
+  List<NotificationItem> _notifications = [];
   
   bool _isLoading = false;
   String _searchQuery = '';
@@ -29,6 +31,7 @@ class AppProvider with ChangeNotifier {
       _favoriteIds = [];
       _cartItems = [];
       _orders = [];
+      _notifications = [];
       notifyListeners();
     }
   }
@@ -44,6 +47,7 @@ class AppProvider with ChangeNotifier {
   List<int> get favoriteIds => _favoriteIds;
   List<CartItem> get cartItems => _cartItems;
   List<Order> get orders => _orders;
+  List<NotificationItem> get notifications => _notifications;
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
@@ -59,6 +63,7 @@ class AppProvider with ChangeNotifier {
       fetchFavorites(),
       fetchCart(),
       fetchOrders(),
+      fetchNotifications(),
     ]);
 
     _isLoading = false;
@@ -122,6 +127,34 @@ class AppProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error fetching orders: $e");
+    }
+  }
+
+  Future<void> fetchNotifications() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: _headers);
+      if (response.statusCode == 200) {
+        List data = json.decode(response.body);
+        _notifications = data.map((json) => NotificationItem.fromJson(json)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching notifications: $e");
+    }
+  }
+
+  Future<void> markNotificationRead(int notificationId) async {
+    try {
+      final response = await http.put(Uri.parse('$baseUrl/notifications/$notificationId/read'), headers: _headers);
+      if (response.statusCode == 200) {
+        final index = _notifications.indexWhere((n) => n.id == notificationId);
+        if (index >= 0) {
+          _notifications[index] = NotificationItem.fromJson(json.decode(response.body));
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error marking notification read: $e");
     }
   }
 

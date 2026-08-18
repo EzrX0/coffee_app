@@ -65,9 +65,6 @@ class CoffeeOnboardingPage extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _dot(isActive: false),
-                      _dot(isActive: false),
-                      _dot(isActive: false),
                       _dot(isActive: true),
                     ],
                   ),

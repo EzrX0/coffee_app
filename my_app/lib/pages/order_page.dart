@@ -41,13 +41,16 @@ class OrderPage extends StatelessWidget {
             );
           }
 
-          double total = cartItems.fold(0, (sum, item) => sum + (item.coffee.price * item.quantity));
+          double total = cartItems.fold(0, (sum, item) => sum + item.totalPrice);
 
           return Column(
             children: [
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                child: RefreshIndicator(
+                  onRefresh: () => appProvider.fetchCart(),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
                   itemCount: cartItems.length,
                   itemBuilder: (context, index) {
                     final item = cartItems[index];
@@ -61,7 +64,13 @@ class OrderPage extends StatelessWidget {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(item.coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                              child: Image.network(item.coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 60, height: 60,
+                                  color: const Color(0xFFF0F0F0),
+                                  child: const Icon(Icons.coffee, color: Colors.brown),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -72,26 +81,28 @@ class OrderPage extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text('Size: ${item.size}', style: const TextStyle(color: Colors.grey)),
                                   const SizedBox(height: 4),
-                                  Text('\$${(item.coffee.price * item.quantity).toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFD4860B), fontWeight: FontWeight.bold)),
+                                  Text('\$${item.totalPrice.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFFD4860B), fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
-                            Column(
+                            Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    appProvider.removeFromCart(item.id);
-                                  },
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.grey),
+                                  onPressed: () => appProvider.updateCartItem(item.id, item.quantity - 1),
                                 ),
-                                Text('x${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline, color: Color(0xFFD4860B)),
+                                  onPressed: () => appProvider.updateCartItem(item.id, item.quantity + 1),
+                                ),
                               ],
-                            )
+                            ),
                           ],
                         ),
                       ),
                     );
-                  },
+                  }),
                 ),
               ),
               Container(

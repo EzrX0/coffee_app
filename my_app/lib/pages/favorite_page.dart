@@ -21,8 +21,14 @@ class FavoritePage extends StatelessWidget {
           final favorites = appProvider.favoriteCoffees;
 
           if (favorites.isEmpty) {
-            return Center(
-              child: Column(
+            return RefreshIndicator(
+              onRefresh: () => appProvider.fetchFavorites(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  Center(
+                    child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
@@ -38,11 +44,17 @@ class FavoritePage extends StatelessWidget {
                   ),
                 ],
               ),
+                  ),
+                ],
+              ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return RefreshIndicator(
+            onRefresh: () => appProvider.fetchFavorites(),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final coffee = favorites[index];
@@ -54,7 +66,13 @@ class FavoritePage extends StatelessWidget {
                   contentPadding: const EdgeInsets.all(12),
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                    child: Image.network(coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 60, height: 60,
+                        color: const Color(0xFFF0F0F0),
+                        child: const Icon(Icons.coffee, color: Colors.brown),
+                      ),
+                    ),
                   ),
                   title: Text(coffee.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(coffee.subtitle),
@@ -75,6 +93,7 @@ class FavoritePage extends StatelessWidget {
                 ),
               );
             },
+          ),
           );
         },
       ),

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -31,6 +32,7 @@ class CoffeeBase(BaseModel):
     price: float
     rating: float
     imageUrl: str
+    description: Optional[str] = None
 
 class CoffeeCreate(CoffeeBase):
     pass
@@ -89,10 +91,32 @@ class OrderBase(BaseModel):
     total_price: float
     payment_intent_id: Optional[str] = None
 
+class OrderCreate(OrderBase):
+    pass
+
 class Order(OrderBase):
     id: int
+    user_id: int
     created_at: datetime
+    status: str
     items: List[OrderItem] = []
+
+    class Config:
+        from_attributes = True
+
+class NotificationBase(BaseModel):
+    title: str
+    description: str
+    type: str
+
+class NotificationCreate(NotificationBase):
+    pass
+
+class Notification(NotificationBase):
+    id: int
+    user_id: int
+    is_read: int
+    created_at: datetime
 
     class Config:
         from_attributes = True

@@ -5,6 +5,7 @@ class CoffeeItem {
   final double price;
   final double rating;
   final String imageUrl;
+  final String description;
 
   const CoffeeItem({
     this.id,
@@ -13,6 +14,7 @@ class CoffeeItem {
     required this.price,
     required this.rating,
     required this.imageUrl,
+    this.description = '',
   });
 
   factory CoffeeItem.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class CoffeeItem {
       price: (json['price'] as num).toDouble(),
       rating: (json['rating'] as num).toDouble(),
       imageUrl: json['imageUrl'] ?? json['imageurl'] ?? '',
+      description: json['description'] ?? '',
     );
   }
 }

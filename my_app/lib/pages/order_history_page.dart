@@ -26,8 +26,14 @@ class OrderHistoryPage extends StatelessWidget {
           }
 
           if (orders.isEmpty) {
-            return Center(
-              child: Column(
+            return RefreshIndicator(
+              onRefresh: () => appProvider.fetchOrders(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  Center(
+                    child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.history, size: 80, color: Colors.grey.shade300),
@@ -38,15 +44,22 @@ class OrderHistoryPage extends StatelessWidget {
                   ),
                 ],
               ),
+                  ),
+                ],
+              ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return RefreshIndicator(
+            onRefresh: () => appProvider.fetchOrders(),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
             itemCount: orders.length,
             itemBuilder: (context, index) {
               return _buildOrderCard(orders[index]);
             },
+          ),
           );
         },
       ),
@@ -63,7 +76,7 @@ class OrderHistoryPage extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -98,6 +111,7 @@ class OrderHistoryPage extends StatelessWidget {
                         image: DecorationImage(
                           image: NetworkImage(item.coffee.imageUrl),
                           fit: BoxFit.cover,
+                          onError: (error, stackTrace) {},
                         ),
                       ),
                     ),

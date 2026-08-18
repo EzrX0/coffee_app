@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import relationship
 from database import Base
 
 class User(Base):
@@ -14,6 +13,7 @@ class User(Base):
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
 class Coffee(Base):
     __tablename__ = "coffees"
@@ -24,6 +24,7 @@ class Coffee(Base):
     price = Column(Float)
     rating = Column(Float)
     imageUrl = Column(String)
+    description = Column(String, nullable=True)
 
     favorites = relationship("Favorite", back_populates="coffee")
     cart_items = relationship("CartItem", back_populates="coffee")
@@ -58,9 +59,23 @@ class Order(Base):
     total_price = Column(Float)
     payment_intent_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String, default="completed")
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String)
+    description = Column(String)
+    type = Column(String) # 'offer', 'status', 'reward'
+    is_read = Column(Integer, default=0) # 0 for false, 1 for true
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="notifications")
 
 class OrderItem(Base):
     __tablename__ = "order_items"
