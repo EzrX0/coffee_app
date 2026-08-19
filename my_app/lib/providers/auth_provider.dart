@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/user.dart';
 
 class AuthProvider with ChangeNotifier {
   final String baseUrl = 'http://10.0.2.2:8000/api';
   final _storage = const FlutterSecureStorage();
   
   String? _token;
+  String? _refreshToken;
   String? _username;
   bool _isLoading = false;
   String _error = '';
@@ -17,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get error => _error;
   String? get token => _token;
+  String? get refreshTokenStr => _refreshToken;
   String? get username => _username;
 
   Future<void> fetchUser() async {
@@ -37,10 +38,37 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> initAuth() async {
     _token = await _storage.read(key: 'jwt');
+    _refreshToken = await _storage.read(key: 'refresh_token');
     if (_token != null) {
       await fetchUser();
     }
     notifyListeners();
+  }
+
+  Future<bool> refreshToken() async {
+    if (_refreshToken == null) return false;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': _refreshToken}),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _token = data['access_token'];
+        _refreshToken = data['refresh_token'];
+        await _storage.write(key: 'jwt', value: _token);
+        if (_refreshToken != null) {
+          await _storage.write(key: 'refresh_token', value: _refreshToken);
+        }
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint("Error refreshing token: $e");
+    }
+    await logout();
+    return false;
   }
 
   Future<bool> login(String username, String password) async {
@@ -61,7 +89,11 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         _token = data['access_token'];
+        _refreshToken = data['refresh_token'];
         await _storage.write(key: 'jwt', value: _token);
+        if (_refreshToken != null) {
+          await _storage.write(key: 'refresh_token', value: _refreshToken);
+        }
         await fetchUser();
         _isLoading = false;
         notifyListeners();
@@ -112,8 +144,10 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> logout() async {
     _token = null;
+    _refreshToken = null;
     _username = null;
     await _storage.delete(key: 'jwt');
+    await _storage.delete(key: 'refresh_token');
     notifyListeners();
   }
 

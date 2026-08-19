@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../widgets/error_retry.dart';
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
@@ -8,15 +9,21 @@ class NotificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Notifications', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text('Notifications', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
+          if (appProvider.notificationError != null) {
+            return ErrorRetry(
+              message: appProvider.notificationError!,
+              onRetry: () => appProvider.fetchNotifications(),
+            );
+          }
           final notifications = appProvider.notifications;
           
           if (notifications.isEmpty) {
@@ -84,6 +91,7 @@ class NotificationPage extends StatelessWidget {
                     }
                   },
                   child: _buildNotificationCard(
+                    context: context,
                     icon: icon,
                     color: color,
                     title: notification.title,
@@ -101,6 +109,7 @@ class NotificationPage extends StatelessWidget {
   }
 
   Widget _buildNotificationCard({
+    required BuildContext context,
     required IconData icon,
     required Color color,
     required String title,
@@ -111,10 +120,10 @@ class NotificationPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isNew ? color.withValues(alpha: 0.05) : Colors.white,
+        color: isNew ? color.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.05) : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isNew ? color.withValues(alpha: 0.3) : Colors.grey.shade200,
+          color: isNew ? color.withValues(alpha: 0.3) : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey.shade200),
           width: 1,
         ),
         boxShadow: [
@@ -147,10 +156,10 @@ class NotificationPage extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     Text(
@@ -166,8 +175,8 @@ class NotificationPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: Colors.black54,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54,
                     fontSize: 14,
                     height: 1.4,
                   ),

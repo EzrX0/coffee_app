@@ -17,7 +17,7 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // ── Top image ──
@@ -37,13 +37,16 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(32),
                     ),
-                    child: Image.network(
-                      widget.item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFF0F0F0),
-                        child: const Center(
-                          child: Icon(Icons.coffee, size: 60, color: Colors.brown),
+                    child: Hero(
+                      tag: 'coffee-${widget.item.id}',
+                      child: Image.network(
+                        widget.item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF0F0F0),
+                          child: const Center(
+                            child: Icon(Icons.coffee, size: 60, color: Colors.brown),
+                          ),
                         ),
                       ),
                     ),
@@ -58,10 +61,10 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: Theme.of(context).cardColor.withValues(alpha: 0.8),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.chevron_left, size: 24),
+                      child: Icon(Icons.chevron_left, size: 24, color: Theme.of(context).iconTheme.color),
                     ),
                   ),
                 ),
@@ -81,13 +84,13 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Theme.of(context).cardColor.withValues(alpha: 0.8),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             isFavorite ? Icons.favorite : Icons.favorite_border,
                             size: 22,
-                            color: isFavorite ? Colors.red : Colors.black,
+                            color: isFavorite ? Colors.red : Theme.of(context).iconTheme.color,
                           ),
                         ),
                       );
@@ -195,11 +198,11 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                           width: 60,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFFD4860B)
-                                  : Colors.grey.shade300,
+                                  ? Theme.of(context).primaryColor
+                                  : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey.shade300),
                               width: isSelected ? 2 : 1,
                             ),
                             borderRadius: BorderRadius.circular(12),
@@ -209,8 +212,8 @@ class _CoffeeDetailPageState extends State<CoffeeDetailPage> {
                               size,
                               style: TextStyle(
                                 color: isSelected
-                                    ? const Color(0xFFD4860B)
-                                    : Colors.black,
+                                    ? Theme.of(context).primaryColor
+                                    : Theme.of(context).textTheme.bodyLarge?.color,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
                                     : FontWeight.normal,

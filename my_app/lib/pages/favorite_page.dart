@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import 'detail_page.dart';
+import '../widgets/error_retry.dart';
 
 class FavoritePage extends StatelessWidget {
   const FavoritePage({super.key});
@@ -9,15 +10,21 @@ class FavoritePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Favorites', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text('Favorites', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
+          if (appProvider.favoriteError != null) {
+            return ErrorRetry(
+              message: appProvider.favoriteError!,
+              onRetry: () => appProvider.fetchFavorites(),
+            );
+          }
           final favorites = appProvider.favoriteCoffees;
 
           if (favorites.isEmpty) {
@@ -35,7 +42,7 @@ class FavoritePage extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text(
                     'No favorites yet',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black54),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -66,11 +73,14 @@ class FavoritePage extends StatelessWidget {
                   contentPadding: const EdgeInsets.all(12),
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 60, height: 60,
-                        color: const Color(0xFFF0F0F0),
-                        child: const Icon(Icons.coffee, color: Colors.brown),
+                    child: Hero(
+                      tag: 'coffee-${coffee.id}',
+                      child: Image.network(coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 60, height: 60,
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF0F0F0),
+                          child: const Icon(Icons.coffee, color: Colors.brown),
+                        ),
                       ),
                     ),
                   ),

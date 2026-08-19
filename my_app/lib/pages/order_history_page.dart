@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/order.dart';
 import 'package:intl/intl.dart';
+import '../widgets/shimmer_loading.dart';
+import '../widgets/error_retry.dart';
 
 class OrderHistoryPage extends StatelessWidget {
   const OrderHistoryPage({super.key});
@@ -10,10 +12,10 @@ class OrderHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Order History', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text('Order History', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
@@ -21,8 +23,15 @@ class OrderHistoryPage extends StatelessWidget {
         builder: (context, appProvider, child) {
           final orders = appProvider.orders;
 
+          if (appProvider.orderError != null) {
+            return ErrorRetry(
+              message: appProvider.orderError!,
+              onRetry: () => appProvider.fetchOrders(),
+            );
+          }
+
           if (appProvider.isLoading && orders.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const ListItemShimmer();
           }
 
           if (orders.isEmpty) {
@@ -57,7 +66,7 @@ class OrderHistoryPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
             itemCount: orders.length,
             itemBuilder: (context, index) {
-              return _buildOrderCard(orders[index]);
+              return _buildOrderCard(context, orders[index]);
             },
           ),
           );
@@ -66,17 +75,17 @@ class OrderHistoryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderCard(Order order) {
+  Widget _buildOrderCard(BuildContext context, Order order) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

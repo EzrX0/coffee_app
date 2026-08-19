@@ -69,13 +69,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final username = auth.username ?? 'User';
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text('Profile', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -115,10 +115,10 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 16),
             Text(
               username,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 4),
@@ -141,11 +141,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
             if (_showPasswordForm) ...[
               const SizedBox(height: 16),
-              _buildPasswordField(_currentPasswordController, 'Current Password'),
+              _buildPasswordField(context, _currentPasswordController, 'Current Password'),
               const SizedBox(height: 12),
-              _buildPasswordField(_newPasswordController, 'New Password'),
+              _buildPasswordField(context, _newPasswordController, 'New Password'),
               const SizedBox(height: 12),
-              _buildPasswordField(_confirmPasswordController, 'Confirm New Password'),
+              _buildPasswordField(context, _confirmPasswordController, 'Confirm New Password'),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -208,9 +208,9 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey.shade200),
         ),
         child: Row(
           children: [
@@ -229,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: titleColor ?? Colors.black87,
+                  color: titleColor ?? Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ),
@@ -240,7 +240,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildPasswordField(TextEditingController controller, String hint) {
+  Widget _buildPasswordField(BuildContext context, TextEditingController controller, String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextField(
       controller: controller,
       obscureText: true,
@@ -248,14 +249,14 @@ class _ProfilePageState extends State<ProfilePage> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isDark ? Colors.grey[800] : Colors.grey.shade50,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey.shade200),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

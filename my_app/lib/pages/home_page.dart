@@ -3,12 +3,13 @@ import 'package:provider/provider.dart';
 import '../models/coffee_item.dart';
 import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
-import '../main.dart';
 import 'detail_page.dart';
 import 'favorite_page.dart';
 import 'order_page.dart';
 import 'order_history_page.dart';
 import 'profile_page.dart';
+import '../widgets/shimmer_loading.dart';
+import '../widgets/error_retry.dart';
 
 class CoffeeHomePage extends StatefulWidget {
   const CoffeeHomePage({super.key});
@@ -23,7 +24,7 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           return IndexedStack(
@@ -228,8 +229,15 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
   }
 
   Widget _buildGrid(AppProvider appProvider) {
+    if (appProvider.coffeeError != null) {
+      return ErrorRetry(
+        message: appProvider.coffeeError!,
+        onRetry: () => appProvider.fetchCoffees(),
+      );
+    }
+    
     if (appProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const CoffeeGridShimmer();
     }
     
     final coffees = appProvider.coffees;
@@ -264,11 +272,11 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.07),
+              color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.07),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -283,17 +291,20 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: Image.network(
-                    item.imageUrl,
-                    height: 130,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
+                  child: Hero(
+                    tag: 'coffee-${item.id}',
+                    child: Image.network(
+                      item.imageUrl,
                       height: 130,
                       width: double.infinity,
-                      color: const Color(0xFFF0F0F0),
-                      child: const Center(
-                        child: Icon(Icons.coffee, size: 40, color: Colors.brown),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 130,
+                        width: double.infinity,
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF0F0F0),
+                        child: const Center(
+                          child: Icon(Icons.coffee, size: 40, color: Colors.brown),
+                        ),
                       ),
                     ),
                   ),
@@ -394,10 +405,10 @@ class _CoffeeHomePageState extends State<CoffeeHomePage> {
     return Container(
       height: 70,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
+            color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.07),
             blurRadius: 10,
           ),
         ],

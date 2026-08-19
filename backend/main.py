@@ -2,8 +2,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -11,7 +14,7 @@ import os
 import models
 import schemas
 import stripe
-from auth import get_current_user, get_password_hash, create_access_token
+from auth import get_current_user, get_password_hash, create_access_token, create_refresh_token, verify_refresh_token
 from database import SessionLocal, engine, get_db
 
 
@@ -169,7 +172,10 @@ async def lifespan(app: FastAPI):
     # Shutdown: nothing needed
 
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Coffee App API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -180,7 +186,8 @@ app.add_middleware(
 )
 
 @app.post("/api/signup", response_model=schemas.User)
-def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def signup(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -193,7 +200,8 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @app.post("/api/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     from auth import verify_password
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -203,7 +211,29 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(user_id=user.id, db=db)
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+@app.post("/api/refresh", response_model=schemas.Token)
+def refresh(payload: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
+    result = verify_refresh_token(payload.refresh_token, db)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+    user, db_token = result
+    
+    # Issue new access token
+    access_token = create_access_token(data={"sub": user.username})
+    # Issue new refresh token
+    new_refresh_token = create_refresh_token(user_id=user.id, db=db)
+    
+    # Delete old refresh token
+    db.delete(db_token)
+    db.commit()
+    
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": new_refresh_token}
 
 @app.get("/api/coffees", response_model=list[schemas.Coffee])
 def read_coffees(

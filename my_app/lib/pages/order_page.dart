@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../widgets/error_retry.dart';
 
 import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 class OrderPage extends StatelessWidget {
@@ -9,15 +10,21 @@ class OrderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Cart', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: Text('Cart', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
+          if (appProvider.cartError != null) {
+            return ErrorRetry(
+              message: appProvider.cartError!,
+              onRetry: () => appProvider.fetchCart(),
+            );
+          }
           final cartItems = appProvider.cartItems;
 
           if (cartItems.isEmpty) {
@@ -29,7 +36,7 @@ class OrderPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text(
                     'Your cart is empty',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black54),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -67,7 +74,7 @@ class OrderPage extends StatelessWidget {
                               child: Image.network(item.coffee.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Container(
                                   width: 60, height: 60,
-                                  color: const Color(0xFFF0F0F0),
+                                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFF0F0F0),
                                   child: const Icon(Icons.coffee, color: Colors.brown),
                                 ),
                               ),
@@ -108,10 +115,10 @@ class OrderPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, -5))
+                    BoxShadow(color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.05), blurRadius: 10, offset: const Offset(0, -5))
                   ],
                 ),
                 child: Column(
@@ -121,9 +128,9 @@ class OrderPage extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9F9F9),
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey.shade300),
                       ),
                       child: const Row(
                         children: [

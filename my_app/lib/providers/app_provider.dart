@@ -20,6 +20,13 @@ class AppProvider with ChangeNotifier {
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String? _token;
+  Future<bool> Function()? _refreshTokenCallback;
+
+  String? _coffeeError;
+  String? _favoriteError;
+  String? _cartError;
+  String? _orderError;
+  String? _notificationError;
 
   void updateToken(String? token) {
     final previousToken = _token;
@@ -34,6 +41,10 @@ class AppProvider with ChangeNotifier {
       _notifications = [];
       notifyListeners();
     }
+  }
+
+  void setRefreshCallback(Future<bool> Function() callback) {
+    _refreshTokenCallback = callback;
   }
 
   Map<String, String> get _headers {
@@ -51,6 +62,12 @@ class AppProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
+  
+  String? get coffeeError => _coffeeError;
+  String? get favoriteError => _favoriteError;
+  String? get cartError => _cartError;
+  String? get orderError => _orderError;
+  String? get notificationError => _notificationError;
   
   List<CoffeeItem> get favoriteCoffees => _coffees.where((c) => _favoriteIds.contains(c.id)).toList();
 
@@ -71,6 +88,8 @@ class AppProvider with ChangeNotifier {
   }
 
   Future<void> fetchCoffees() async {
+    _coffeeError = null;
+    notifyListeners();
     String url = '$baseUrl/coffees?';
     if (_selectedCategory != 'All' && _selectedCategory.isNotEmpty) {
       url += 'category=$_selectedCategory&';
@@ -80,67 +99,125 @@ class AppProvider with ChangeNotifier {
     }
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _coffees = data.map((json) => CoffeeItem.fromJson(json)).toList();
-        notifyListeners();
+      } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
+        // Only try to refresh if not fetching public coffees? Coffees are public anyway, wait, it doesn't need auth, but it passes token if available. Wait, /coffees is public. Let's ignore 401 for /coffees unless it requires auth.
+        _coffeeError = 'Failed to load coffees (${response.statusCode})';
+      } else {
+        _coffeeError = 'Failed to load coffees (${response.statusCode})';
       }
     } catch (e) {
       debugPrint("Error fetching coffees: $e");
+      _coffeeError = 'Network error occurred. Please check your connection.';
     }
+    notifyListeners();
   }
 
   Future<void> fetchFavorites() async {
+    if (_token == null) return;
+    _favoriteError = null;
+    notifyListeners();
     try {
-      final response = await http.get(Uri.parse('$baseUrl/favorites'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/favorites'), headers: _headers).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _favoriteIds = data.map<int>((f) => f['coffee_id'] as int).toList();
-        notifyListeners();
+      } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
+        bool refreshed = await _refreshTokenCallback!();
+        if (refreshed) {
+          return fetchFavorites();
+        } else {
+          _favoriteError = 'Session expired';
+        }
+      } else {
+        _favoriteError = 'Failed to load favorites';
       }
     } catch (e) {
       debugPrint("Error fetching favorites: $e");
+      _favoriteError = 'Network error occurred.';
     }
+    notifyListeners();
   }
 
   Future<void> fetchCart() async {
+    if (_token == null) return;
+    _cartError = null;
+    notifyListeners();
     try {
-      final response = await http.get(Uri.parse('$baseUrl/cart'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/cart'), headers: _headers).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _cartItems = data.map((json) => CartItem.fromJson(json)).toList();
-        notifyListeners();
+      } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
+        bool refreshed = await _refreshTokenCallback!();
+        if (refreshed) {
+          return fetchCart();
+        } else {
+          _cartError = 'Session expired';
+        }
+      } else {
+        _cartError = 'Failed to load cart';
       }
     } catch (e) {
       debugPrint("Error fetching cart: $e");
+      _cartError = 'Network error occurred.';
     }
+    notifyListeners();
   }
 
   Future<void> fetchOrders() async {
+    if (_token == null) return;
+    _orderError = null;
+    notifyListeners();
     try {
-      final response = await http.get(Uri.parse('$baseUrl/orders'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/orders'), headers: _headers).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _orders = data.map((json) => Order.fromJson(json)).toList();
-        notifyListeners();
+      } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
+        bool refreshed = await _refreshTokenCallback!();
+        if (refreshed) {
+          return fetchOrders();
+        } else {
+          _orderError = 'Session expired';
+        }
+      } else {
+        _orderError = 'Failed to load orders';
       }
     } catch (e) {
       debugPrint("Error fetching orders: $e");
+      _orderError = 'Network error occurred.';
     }
+    notifyListeners();
   }
 
   Future<void> fetchNotifications() async {
+    if (_token == null) return;
+    _notificationError = null;
+    notifyListeners();
     try {
-      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: _headers).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List data = json.decode(response.body);
         _notifications = data.map((json) => NotificationItem.fromJson(json)).toList();
-        notifyListeners();
+      } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
+        bool refreshed = await _refreshTokenCallback!();
+        if (refreshed) {
+          return fetchNotifications();
+        } else {
+          _notificationError = 'Session expired';
+        }
+      } else {
+        _notificationError = 'Failed to load notifications';
       }
     } catch (e) {
       debugPrint("Error fetching notifications: $e");
+      _notificationError = 'Network error occurred.';
     }
+    notifyListeners();
   }
 
   Future<void> markNotificationRead(int notificationId) async {

@@ -10,6 +10,7 @@ import schemas
 from database import get_db
 from dotenv import load_dotenv
 import os
+import secrets
 
 load_dotenv()
 
@@ -35,6 +36,33 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+def create_refresh_token(user_id: int, db: Session):
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+    db_token = models.RefreshToken(user_id=user_id, token=token, expires_at=expires_at)
+    db.add(db_token)
+    db.commit()
+    return token
+
+def verify_refresh_token(token: str, db: Session):
+    db_token = db.query(models.RefreshToken).filter(models.RefreshToken.token == token).first()
+    if not db_token:
+        return None
+    
+    # Check if expired
+    if db_token.expires_at.tzinfo is None:
+        expires_at = db_token.expires_at.replace(tzinfo=timezone.utc)
+    else:
+        expires_at = db_token.expires_at
+        
+    if datetime.now(timezone.utc) > expires_at:
+        db.delete(db_token)
+        db.commit()
+        return None
+        
+    user = db.query(models.User).filter(models.User.id == db_token.user_id).first()
+    return user, db_token
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
