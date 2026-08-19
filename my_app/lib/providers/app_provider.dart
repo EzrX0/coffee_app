@@ -128,7 +128,8 @@ class AppProvider with ChangeNotifier {
       } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
         bool refreshed = await _refreshTokenCallback!();
         if (refreshed) {
-          return fetchFavorites();
+          await fetchFavorites();
+          return ;
         } else {
           _favoriteError = 'Session expired';
         }
@@ -154,7 +155,8 @@ class AppProvider with ChangeNotifier {
       } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
         bool refreshed = await _refreshTokenCallback!();
         if (refreshed) {
-          return fetchCart();
+          await fetchCart();
+          return ;
         } else {
           _cartError = 'Session expired';
         }
@@ -180,7 +182,8 @@ class AppProvider with ChangeNotifier {
       } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
         bool refreshed = await _refreshTokenCallback!();
         if (refreshed) {
-          return fetchOrders();
+          await fetchOrders();
+          return ;
         } else {
           _orderError = 'Session expired';
         }
@@ -206,7 +209,8 @@ class AppProvider with ChangeNotifier {
       } else if (response.statusCode == 401 && _refreshTokenCallback != null) {
         bool refreshed = await _refreshTokenCallback!();
         if (refreshed) {
-          return fetchNotifications();
+          await fetchNotifications();
+          return ;
         } else {
           _notificationError = 'Session expired';
         }
